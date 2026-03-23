@@ -6,3 +6,8 @@ authors = ["Germán (@itsgerliz)"]
 edition = "2024"
 
 [dependencies]
+aes-gcm = "0.10.3"
+argon2 = "0.5.3"
+rand = "0.10.0"
+semver = "1.0.27"
+thiserror = "2.0.18"
