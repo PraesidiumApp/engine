@@ -1,0 +1,8 @@
+[package]
+name = "engine"
+version = "0.1.0-dev"
+description = "The backbone of Praesidium"
+authors = ["Germán (@itsgerliz)"]
+edition = "2024"
+
+[dependencies]
