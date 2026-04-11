@@ -15,7 +15,6 @@ pub const VAULT_VERSION: isize = 1;
 
 pub struct Session {
     vault: Connection,
-    salt: [u8; SALT_SIZE],
     master_key: Zeroizing<[u8; MASTER_KEY_SIZE]>,
 }
 
@@ -85,7 +84,6 @@ impl Session {
 
         Ok(Self {
             vault: vault_connection,
-            salt: salt_buffer,
             master_key: Zeroizing::new(master_key_buffer),
         })
     }
