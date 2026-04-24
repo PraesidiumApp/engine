@@ -25,6 +25,8 @@ pub fn fill_with_random_bytes(buffer: &mut [u8]) -> Result<(), Error> {
 /// * `master_key_buffer` - Output buffer where the derived 32-byte master key will be written
 /// # Errors
 /// * `Err(Error::KDF(...))` - If there was any problem with the key derivation function (unlikely)
+/// # Considerations
+/// * This function nukes the `password` argument for security if it succeeds
 pub fn derive_master_key(
     password: &mut str,
     salt_buffer: &[u8; SALT_SIZE],
