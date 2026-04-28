@@ -117,9 +117,9 @@ impl Session {
         connection.execute(
             "
                 INSERT INTO items (id, label, kind, nonce, auth_tag, payload) 
-                VALUES (0, praesidium_canary, canary, ?1, ?2, ?3);
+                VALUES (0, ?1, ?2, ?3, ?4, ?5);
             ",
-            (nonce, auth_tag, payload)
+            ("praesidium_canary", "canary", nonce, auth_tag, payload)
         )?;
 
         Ok(Self {
