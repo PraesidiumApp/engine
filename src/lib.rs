@@ -65,14 +65,14 @@ mod sql {
 }
 
 pub struct Session {
-    connection: Connection,
-    master_key: Zeroizing<[u8; MASTER_KEY_SIZE]>,
+    pub connection: Connection,
+    pub master_key: Zeroizing<[u8; MASTER_KEY_SIZE]>,
     pub metadata: SessionMetadata,
     pub items: Vec<SessionItem>,
 }
 
 pub struct SessionMetadata {
-    salt: [u8; SALT_SIZE],
+    pub salt: [u8; SALT_SIZE],
     pub created_at: String,
     pub version: i64,
 }
@@ -124,7 +124,7 @@ impl Session {
             0,
             CANARY_LABEL,
             CANARY_KIND,
-            CANARY_PAYLOAD.into(),
+            &mut CANARY_PAYLOAD.as_bytes().to_vec(),
         )?;
 
         let items = vec![canary];
@@ -158,18 +158,16 @@ impl Session {
         // Verify canary
         let canary = SessionItem::read(&connection, &master_key, 0)?;
 
-        let items = vec![canary];
+        let mut items = vec![canary];
 
-        let mut session = Self {
+        SessionItem::scan_and_fill(&connection, &master_key, &mut items)?;
+
+        Ok(Self {
             connection,
             master_key,
             metadata,
             items,
-        };
-
-        SessionItem::scan_and_fill(&mut session)?;
-
-        Ok(session)
+        })
     }
 }
 
@@ -190,44 +188,46 @@ impl SessionMetadata {
 }
 
 impl SessionItem {
-    fn create(
+    pub fn create(
         connection: &Connection,
         master_key: &[u8; MASTER_KEY_SIZE],
         id: i64,
         label: &str,
         kind: &str,
-        mut payload: Vec<u8>,
+        payload: &mut [u8],
     ) -> Result<Self, Error> {
         if Self::exists(connection, id)? {
             return Err(Error::ItemExists);
         }
 
         let mut ad = Vec::new();
-        Self::construct_ad_buffer(id, label, kind, &mut ad);
+        Self::construct_ad(id, label, kind, &mut ad);
         let mut nonce = [0u8; NONCE_SIZE];
         let mut auth_tag = [0u8; AUTH_TAG_SIZE];
+        let cleartext_payload = payload.to_vec();
+
         encrypt(
             master_key,
             Some(ad.as_slice()),
             &mut nonce,
             &mut auth_tag,
-            payload.as_mut_slice(),
+            payload,
         )?;
 
         connection.execute(
             sql::CREATE_ITEM,
-            (id, label, kind, nonce, auth_tag, payload.as_slice()),
+            (id, label, kind, nonce, auth_tag, &*payload),
         )?;
 
         Ok(Self {
             id,
             label: label.to_string(),
             kind: kind.to_string(),
-            payload: Zeroizing::new(payload),
+            payload: Zeroizing::new(cleartext_payload),
         })
     }
 
-    fn read(
+    pub fn read(
         connection: &Connection,
         master_key: &[u8; MASTER_KEY_SIZE],
         id: i64,
@@ -249,14 +249,14 @@ impl SessionItem {
         })?;
 
         let mut ad = Vec::new();
-        Self::construct_ad_buffer(id, label.as_str(), kind.as_str(), &mut ad);
+        Self::construct_ad(id, &*label, &*kind, &mut ad);
 
         decrypt(
             master_key,
             Some(ad.as_slice()),
             &nonce,
             &auth_tag,
-            payload.as_mut_slice(),
+            &mut payload,
         )?;
 
         Ok(Self {
@@ -267,11 +267,11 @@ impl SessionItem {
         })
     }
 
-    fn exists(connection: &Connection, id: i64) -> Result<bool, Error> {
+    pub fn exists(connection: &Connection, id: i64) -> Result<bool, Error> {
         Ok(connection.query_row(sql::CHECK_ITEM_EXISTS, ((id),), |row| row.get(0))?)
     }
 
-    fn construct_ad_buffer(id: i64, label: &str, kind: &str, buffer: &mut Vec<u8>) {
+    fn construct_ad(id: i64, label: &str, kind: &str, buffer: &mut Vec<u8>) {
         buffer.extend_from_slice(&id.to_be_bytes());
         buffer.push(b'|');
         buffer.extend_from_slice(label.as_bytes());
@@ -279,15 +279,19 @@ impl SessionItem {
         buffer.extend_from_slice(kind.as_bytes());
     }
 
-    fn scan_and_fill(session: &mut Session) -> Result<(), Error> {
-        let mut statement = session.connection.prepare(sql::SCAN_ITEMS)?;
+    fn scan_and_fill(
+        connection: &Connection,
+        master_key: &[u8; MASTER_KEY_SIZE],
+        items: &mut Vec<SessionItem>,
+    ) -> Result<(), Error> {
+        let mut statement = connection.prepare(sql::SCAN_ITEMS)?;
 
         let ids = statement.query_map((), |row| row.get::<_, i64>(0))?;
 
         for id_result in ids {
             let id = id_result?;
-            let item = Self::read(&session.connection, &session.master_key, id)?;
-            session.items.push(item);
+            let item = Self::read(&connection, master_key, id)?;
+            items.push(item);
         }
 
         Ok(())
