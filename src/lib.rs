@@ -77,7 +77,7 @@ pub struct SessionMetadata {
     pub version: i64,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct SessionItem {
     pub id: i64,
     pub label: String,
