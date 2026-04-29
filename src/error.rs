@@ -19,5 +19,7 @@ pub enum Error {
     #[error("Can't create a new vault on a not empty database")]
     VaultNotEmpty,
     #[error("Vault version is newer than what we support")]
-    VaultVersionNewer
+    VaultVersionNewer,
+    #[error("An item already exists with the specified ID")]
+    ItemExists,
 }
