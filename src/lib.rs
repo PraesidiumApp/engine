@@ -125,8 +125,7 @@ impl Session {
             CANARY_PAYLOAD.into(),
         )?;
 
-        let mut items = Vec::new();
-        items.push(canary);
+        let items = vec![canary];
 
         Ok(Self {
             connection,
@@ -157,8 +156,7 @@ impl Session {
         // Verify canary
         let canary = SessionItem::read(&connection, &master_key, 0)?;
 
-        let mut items = Vec::new();
-        items.push(canary);
+        let items = vec![canary];
 
         let mut session = Self {
             connection,
@@ -279,12 +277,10 @@ impl SessionItem {
         buffer.extend_from_slice(kind.as_bytes());
     }
 
-    fn scan_and_fill(
-        session: &mut Session
-    ) -> Result<(), Error> {
+    fn scan_and_fill(session: &mut Session) -> Result<(), Error> {
         let mut statement = session.connection.prepare(sql::SCAN_ITEMS)?;
 
-        let ids = statement.query_map((), |row| Ok(row.get::<_, i64>(0)?))?;
+        let ids = statement.query_map((), |row| row.get::<_, i64>(0))?;
 
         for id_result in ids {
             let id = id_result?;
