@@ -10,5 +10,6 @@ aes-gcm = { version = "0.10.3", features = ["std"] }
 argon2 = { version = "0.5.3", features = ["std"] }
 rand = "0.10.0"
 rusqlite = { version = "0.39.0", features = ["bundled"] }
+serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.18"
-zeroize = "1.8.2"
+zeroize = { version = "1.8.2", features = ["serde"] }
