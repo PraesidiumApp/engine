@@ -1,7 +1,7 @@
 //! The backbone of Praesidium
 
 use rusqlite::{Connection, OpenFlags};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::path::Path;
 use zeroize::Zeroizing;
 
@@ -77,7 +77,7 @@ pub struct SessionMetadata {
     pub version: i64,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SessionItem {
     pub id: i64,
     pub label: String,
