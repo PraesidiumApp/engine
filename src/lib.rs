@@ -227,6 +227,28 @@ impl SessionItem {
         })
     }
 
+    pub fn scan_and_fill(
+        connection: &Connection,
+        master_key: &[u8; MASTER_KEY_SIZE],
+        items: &mut Vec<SessionItem>,
+    ) -> Result<(), Error> {
+        let mut statement = connection.prepare(sql::SCAN_ITEMS)?;
+
+        let ids = statement.query_map((), |row| row.get::<_, i64>(0))?;
+
+        for id_result in ids {
+            let id = id_result?;
+            let item = Self::read(&connection, master_key, id)?;
+            items.push(item);
+        }
+
+        Ok(())
+    }
+
+    pub fn exists(connection: &Connection, id: i64) -> Result<bool, Error> {
+        Ok(connection.query_row(sql::CHECK_ITEM_EXISTS, ((id),), |row| row.get(0))?)
+    }
+
     fn read(
         connection: &Connection,
         master_key: &[u8; MASTER_KEY_SIZE],
@@ -267,10 +289,6 @@ impl SessionItem {
         })
     }
 
-    fn exists(connection: &Connection, id: i64) -> Result<bool, Error> {
-        Ok(connection.query_row(sql::CHECK_ITEM_EXISTS, ((id),), |row| row.get(0))?)
-    }
-
     fn construct_ad(id: i64, label: &str, kind: &str, buffer: &mut Vec<u8>) {
         buffer.extend_from_slice(&id.to_be_bytes());
         buffer.push(b'|');
@@ -279,21 +297,4 @@ impl SessionItem {
         buffer.extend_from_slice(kind.as_bytes());
     }
 
-    fn scan_and_fill(
-        connection: &Connection,
-        master_key: &[u8; MASTER_KEY_SIZE],
-        items: &mut Vec<SessionItem>,
-    ) -> Result<(), Error> {
-        let mut statement = connection.prepare(sql::SCAN_ITEMS)?;
-
-        let ids = statement.query_map((), |row| row.get::<_, i64>(0))?;
-
-        for id_result in ids {
-            let id = id_result?;
-            let item = Self::read(&connection, master_key, id)?;
-            items.push(item);
-        }
-
-        Ok(())
-    }
 }
