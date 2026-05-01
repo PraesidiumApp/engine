@@ -60,7 +60,7 @@ mod sql {
         SELECT label, kind, nonce, auth_tag, payload FROM items WHERE id = ?1
     ";
     pub(super) const SCAN_ITEMS: &str = "
-        SELECT id FROM items WHERE id != 0 ORDER BY label ASC
+        SELECT id FROM items WHERE id != 0 ORDER BY id ASC
     ";
 }
 
