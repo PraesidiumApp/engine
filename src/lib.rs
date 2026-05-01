@@ -52,8 +52,8 @@ mod sql {
     pub(super) const CHECK_ITEM_EXISTS: &str = "
         SELECT EXISTS(SELECT 1 FROM items WHERE id = ?1)
     ";
-    pub(super) const CREATE_ITEM: &str = "
-        INSERT INTO items (id, label, kind, nonce, auth_tag, payload) 
+    pub(super) const SAVE_ITEM: &str = "
+        INSERT OR REPLACE INTO items (id, label, kind, nonce, auth_tag, payload) 
         VALUES (?1, ?2, ?3, ?4, ?5, ?6);
     ";
     pub(super) const READ_ITEM: &str = "
@@ -118,7 +118,7 @@ impl Session {
         let metadata = SessionMetadata::get(&connection)?;
 
         // Insert canary item
-        let canary = SessionItem::create(
+        let canary = SessionItem::save(
             &connection,
             &master_key,
             0,
@@ -188,7 +188,7 @@ impl SessionMetadata {
 }
 
 impl SessionItem {
-    pub fn create(
+    pub fn save(
         connection: &Connection,
         master_key: &[u8; MASTER_KEY_SIZE],
         id: i64,
@@ -215,7 +215,7 @@ impl SessionItem {
         )?;
 
         connection.execute(
-            sql::CREATE_ITEM,
+            sql::SAVE_ITEM,
             (id, label, kind, nonce, auth_tag, &*payload),
         )?;
 
@@ -227,7 +227,7 @@ impl SessionItem {
         })
     }
 
-    pub fn read(
+    fn read(
         connection: &Connection,
         master_key: &[u8; MASTER_KEY_SIZE],
         id: i64,
@@ -267,7 +267,7 @@ impl SessionItem {
         })
     }
 
-    pub fn exists(connection: &Connection, id: i64) -> Result<bool, Error> {
+    fn exists(connection: &Connection, id: i64) -> Result<bool, Error> {
         Ok(connection.query_row(sql::CHECK_ITEM_EXISTS, ((id),), |row| row.get(0))?)
     }
 
