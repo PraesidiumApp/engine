@@ -243,6 +243,8 @@ impl SessionItem {
     ) -> Result<(), Error> {
         let mut statement = connection.prepare(sql::SCAN_ITEMS)?;
 
+        items.clear();
+
         let ids = statement.query_map((), |row| row.get::<_, i64>(0))?;
 
         for id_result in ids {
