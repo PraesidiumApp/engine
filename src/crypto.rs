@@ -65,7 +65,7 @@ pub mod payload {
 
     /// Encrypts any payload
     /// # Arguments
-    /// * `master_key` - Buffer containing the 32-byte master key (with [derive_master_key])
+    /// * `master_key` - Buffer containing the 32-byte master key (with [super::master_key::derive])
     /// * `associated_data` - Data chained to the given payload, not encrypted but included in the auth tag
     /// * `nonce` - 12-byte buffer where the generated nonce will be written
     /// * `auth_tag` - 16-byte buffer where the authentication tag chained to the ciphertext will be written
@@ -102,7 +102,7 @@ pub mod payload {
 
     /// Decrypts any payload
     /// # Arguments
-    /// * `master_key` - Buffer containing the 32-byte master key (with [derive_master_key])
+    /// * `master_key` - Buffer containing the 32-byte master key (with [super::master_key::derive])
     /// * `associated_data` - Data chained to the given payload, not decrypted but verified
     /// * `nonce` - 12-byte buffer containing the the nonce used for encryption
     /// * `auth_tag` - 16-byte buffer containing the auth tag produced on encryption

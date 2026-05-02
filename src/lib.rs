@@ -68,6 +68,7 @@ mod sql {
     ";
 }
 
+/// Active session handle
 pub struct Session {
     pub connection: Connection,
     pub master_key: Zeroizing<[u8; MASTER_KEY_SIZE]>,
@@ -75,12 +76,14 @@ pub struct Session {
     pub items: Vec<SessionItem>,
 }
 
+/// [Session] metadata
 pub struct SessionMetadata {
     pub salt: [u8; SALT_SIZE],
     pub created_at: String,
     pub version: i64,
 }
 
+/// An item in a [Session]
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SessionItem {
     pub id: i64,
@@ -192,6 +195,14 @@ impl SessionMetadata {
 }
 
 impl SessionItem {
+    /// Save a new [SessionItem] into the database, returning the item saved
+    /// # Arguments
+    /// * `connection` - Connection to the database
+    /// * `master_key` - [Session]'s master key used for payload encryption 
+    /// * `id` - New item ID
+    /// * `label` - New item label
+    /// * `kind` - New item type
+    /// * `payload` - Payload to be encrypted inplace
     pub fn save(
         connection: &Connection,
         master_key: &[u8; MASTER_KEY_SIZE],
@@ -227,6 +238,10 @@ impl SessionItem {
         })
     }
 
+    /// Drop an existing item on the database
+    /// # Arguments
+    /// * `connection` - Connection to the database
+    /// * `id` - ID of the item being dropped
     pub fn drop(connection: &Connection, id: i64) -> Result<(), Error> {
         connection.execute(
             sql::DELETE_ITEM,
@@ -236,6 +251,11 @@ impl SessionItem {
         Ok(())
     }
 
+    /// Scan for items on the database, dumping them into the specified vector
+    /// # Arguments
+    /// * `connection` - Connection to the database
+    /// * `master_key` - [Session]'s master key used for payload decryption
+    /// * `items` - Vector where the [SessionItem]s will be saved
     pub fn scan_and_fill(
         connection: &Connection,
         master_key: &[u8; MASTER_KEY_SIZE],
@@ -256,6 +276,10 @@ impl SessionItem {
         Ok(())
     }
 
+    /// Check the existance of an item
+    /// # Arguments
+    /// * `connection` - Connection to the database
+    /// * `id` - ID of the item to be checked
     pub fn exists(connection: &Connection, id: i64) -> Result<bool, Error> {
         Ok(connection.query_row(sql::CHECK_ITEM_EXISTS, ((id),), |row| row.get(0))?)
     }
