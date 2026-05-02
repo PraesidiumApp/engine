@@ -62,6 +62,10 @@ mod sql {
     pub(super) const SCAN_ITEMS: &str = "
         SELECT id FROM items WHERE id != 0 ORDER BY id ASC
     ";
+    pub(super) const DELETE_ITEM: &str = "
+        DELETE FROM items 
+        WHERE id = ?1;
+    ";
 }
 
 pub struct Session {
@@ -225,6 +229,15 @@ impl SessionItem {
             kind: kind.to_string(),
             payload: Zeroizing::new(cleartext_payload),
         })
+    }
+
+    pub fn drop(connection: &Connection, id: i64) -> Result<(), Error> {
+        connection.execute(
+            sql::DELETE_ITEM,
+            ((id),)
+        )?;
+
+        Ok(())
     }
 
     pub fn scan_and_fill(
