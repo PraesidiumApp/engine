@@ -200,10 +200,6 @@ impl SessionItem {
         kind: &str,
         payload: &mut [u8],
     ) -> Result<Self, Error> {
-        if Self::exists(connection, id)? {
-            return Err(Error::ItemExists);
-        }
-
         let mut ad = Vec::new();
         Self::construct_ad(id, label, kind, &mut ad);
         let mut nonce = [0u8; NONCE_SIZE];
